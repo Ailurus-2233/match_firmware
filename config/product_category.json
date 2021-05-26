@@ -1,0 +1,22 @@
+{
+  "M_BAS":{"cn_name":"楼宇自动化系统"},
+  "M_ICS":{"cn_name":"工业控制系统"},
+  "M_OAS":{"cn_name":"办公自动化系统"},
+  "M_CSS":{"cn_name":"网络安全系统"},
+  "M_HAS":{"cn_name":"智能家居系统"},
+  "M_VCS":{"cn_name":"视频会议系统"},
+  "M_VSS":{"cn_name":"视频监控系统"},
+  "M_RSS":{"cn_name":"路由交换系统"},
+  "H_OthCateDev":{"cn_name":"其他类别设备"},
+  "H_PersDev":{"cn_name":"个人设备"},
+  "H_ServDev":{"cn_name":"服务器设备"},
+  "H_UnkCateDev":{"cn_name":"未知类别设备"},
+  "M_ElectricSys":{"cn_name":"电力系统"},
+  "M_IHS":{"cn_name":"智能医疗系统"},
+  "S_AppSoft":{"cn_name":"应用软件"},
+  "S_InfoSysPlat":{"cn_name":"信息系统平台"},
+  "S_OS":{"cn_name":"操作系统"},
+  "S_OthCateSoft":{"cn_name":"其他类别软件"},
+  "S_SupSoft":{"cn_name":"支撑软件"},
+  "S_UnkCateSoft":{"cn_name":"未知类别软件"}
+}
