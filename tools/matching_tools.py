@@ -1,14 +1,12 @@
 import os
 import re
-# from tqdm import tqdm
+from tqdm import tqdm
 from tools import database_tools
 
 
 # 比对固件信息，获取该固件所述的设备信息
 # 返回为一个字典类型
 def find_models_info_by_firmware(folder_name, engine):
-    print("Searching")
-
     no_match_flag = False
     no_model_flag = False
     vendors_flag = False
@@ -26,11 +24,7 @@ def find_models_info_by_firmware(folder_name, engine):
     # 至少有一个匹配公司
     if len(may_vendors) > 0:
         # 遍历比对型号信息
-        for vendor in may_vendors:
-            models = database_tools.select_models_by_vendor(engine, vendor)
-            may_info = get_exist_models_by_vendor(folder_name, models, vendor)
-            if len(may_info[vendor]) > 0:
-                may_models_info[vendor] = may_info[vendor]
+        may_models_info = find_all_models(folder_name, may_vendors, engine)
 
     # 结果为空，标注 no_match 将may_venders记录为结果
     if len(may_models_info.keys()) == 0:
@@ -51,8 +45,7 @@ def find_models_info_by_firmware(folder_name, engine):
             # 匹配成功，记录匹配信息
             if file_name_flag:
                 may_models_info[vendor] = [may_info]
-    may_models_info['flags'] = {'no_match_flag': no_match_flag, 'no_model_flag': no_model_flag, 'vendors_flag': vendors_flag, 'models_flag': models_flag, 'file_name_flag': file_name_flag}
-    return may_models_info
+    return may_models_info, {'no_match_flag': no_match_flag, 'no_model_flag': no_model_flag, 'vendors_flag': vendors_flag, 'models_flag': models_flag, 'file_name_flag': file_name_flag}
 
 
 # 通过正则表达式，规避掉字段出现在单词中的情况
@@ -87,11 +80,13 @@ def is_exist_model(folder_name, model_name):
 # 返回解包文件夹中，出现过的公司列表
 def get_exist_vendors(folder_name, vendors):
     ans = []
-    for vendor in vendors:
+    print('Searching vendors')
+    for vendor in tqdm(vendors):
         if vendor is None:
             continue
         if is_exist_vendor(folder_name, vendor):
             ans.append(vendor)
+    print('may vendors: {}'.format(ans))
     return ans
 
 
@@ -104,6 +99,18 @@ def get_exist_models_by_vendor(folder_name, models, vendor):
         if is_exist_model(folder_name, model):
             ans.append(model)
     return {vendor: ans}
+
+
+# 遍历查找所有的型号
+def find_all_models(folder_name, may_vendors, engine):
+    print('Searching models')
+    ans = {}
+    for vendor in tqdm(may_vendors):
+        models = database_tools.select_models_by_vendor(engine, vendor)
+        may_info = get_exist_models_by_vendor(folder_name, models, vendor)
+        if len(may_info[vendor]) > 0:
+            ans[vendor] = may_info[vendor]
+    return ans
 
 
 # 多型号的情况下，需要进行额外的匹配，这里先只是匹配名称
