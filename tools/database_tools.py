@@ -20,27 +20,19 @@ def run_sql(sql_query, engine):
     return pd.read_sql_query(sql_query, engine)
 
 
-# 单列数据库查询结果转为数组的操作
-def analysis_req(req):
-    req = req.to_dict()
-    for key in req.keys():
-        req[key] = req[key][0]
-    return json.dumps(req)
-
-
 # 从数据库中 获取所有的公司名称
-def get_companies(engine):
-    companies_temp = run_sql("select distinct company from list", engine)
-    companies = []
-    for i in companies_temp.values:
-        companies.append(i[0])
-    return companies
+def select_vendors(engine):
+    vendors_temp = run_sql("select distinct vendor from list_tmp", engine)
+    vendors = []
+    for i in vendors_temp.values:
+        vendors.append(i[0])
+    return vendors
 
 
 # 在数据库中 获取该公司的所有设备名称
-def get_versions_by_company(engine, company):
-    version_temp = run_sql("select distinct version from list where company like '{}'".format(company), engine)
-    versions = []
-    for i in version_temp.values:
-        versions.append(i[0])
-    return versions
+def select_models_by_vendor(engine, vendor):
+    model_temp = run_sql("select distinct productModel from list_tmp where vendor like '{}'".format(vendor), engine)
+    models = []
+    for i in model_temp.values:
+        models.append(i[0])
+    return models
