@@ -8,21 +8,50 @@ from tools import database_tools
 # 返回为一个字典类型
 def find_models_info_by_firmware(folder_name, engine):
     print("Searching")
+
+    no_match_flag = False
+    no_model_flag = False
+    vendors_flag = False
+    models_flag = False
+    file_name_flag = False
     may_models_info = {}
+
     vendors = database_tools.select_vendors(engine)
     may_vendors = get_exist_vendors(folder_name, vendors)
+
+    # 匹配公司为空，标注 no_match
+    if len(may_vendors) == 0:
+        no_match_flag = True
+
+    # 至少有一个匹配公司
     if len(may_vendors) > 0:
+        # 遍历比对型号信息
         for vendor in may_vendors:
             models = database_tools.select_models_by_vendor(engine, vendor)
             may_info = get_exist_models_by_vendor(folder_name, models, vendor)
             if len(may_info[vendor]) > 0:
                 may_models_info[vendor] = may_info[vendor]
-        # if len(may_models_info.keys()) == 0:
-            # TODO 记录到仅仅匹配公司的log文件中
-        # else :
-            # TODO 记录到匹配公司-设备的log文件中
-    # else :
-        # TODO 记录到无匹配log文件中
+
+    # 结果为空，标注 no_match 将may_venders记录为结果
+    if len(may_models_info.keys()) == 0:
+        no_model_flag = True
+        may_models_info['may_venders'] = may_vendors
+    # 结果公司数量多于1，标注 公司数量过多 将may_venders记录为结果
+    elif len(may_models_info.keys()) > 1:
+        vendors_flag = True
+        may_models_info['may_venders'] = may_vendors
+    else:
+        # 公司数量为1，型号数量多于1，标注 型号数量过多，进行额外匹配
+        if len(may_models_info[list(may_models_info.keys())[0]]) > 1:
+            models_flag = True
+            # 进行额外匹配
+            vendor = list(may_models_info.keys())[0]
+            models = may_models_info[vendor]
+            file_name_flag, may_info = extra_models_match(folder_name, models)
+            # 匹配成功，记录匹配信息
+            if file_name_flag:
+                may_models_info[vendor] = [may_info]
+    may_models_info['flags'] = {'no_match_flag': no_match_flag, 'no_model_flag': no_model_flag, 'vendors_flag': vendors_flag, 'models_flag': models_flag, 'file_name_flag': file_name_flag}
     return may_models_info
 
 
@@ -75,3 +104,12 @@ def get_exist_models_by_vendor(folder_name, models, vendor):
         if is_exist_model(folder_name, model):
             ans.append(model)
     return {vendor: ans}
+
+
+# 多型号的情况下，需要进行额外的匹配，这里先只是匹配名称
+def extra_models_match(folder_name, models):
+    for model in models:
+        if model in folder_name:
+            return True, model
+    else:
+        return False
