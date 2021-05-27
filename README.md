@@ -32,4 +32,34 @@
 1. 工具设计统一建立在tools包下
 2. 文件名明确是用于那个方面的
 
-### 
+### 比对细节描述
+比对厂商信息，可能出现的结果：
+
+1. [] 空数组，无匹配信息的bin文件名称记入nomatch.log
+2. ['vendor1'] 单个厂商，执行型号查询操作，后执行step2
+3. ['vendor1', 'vendor2'...] 多个厂商，执行型号查询操作，后执行step2
+
+型号查询操作：在数据库里select数据
+
+输入['vendor1', 'vendor2',...]
+
+输出
+{
+    'vendor1':['model1', 'model2', ...],
+    'vendor2':['model1', 'model2', ...],
+    ...
+}
+如果输入就一个，那输出的也就一行数据。
+
+比对型号信息，将型号查询操作的结果依次比对，可能出现的结果:
+
+1. {} 无匹配，grep结果记录在，noModel_厂商_bin文件名.log 文件名的 厂商之间用-分割，厂商为型号查询操作的输入
+2. {'vendor1':['model1']} 一对一匹配，将grep结果记录在 vendor1_model1_bin文件名.log
+3. {'vendor1':['model1', 'model2', ...]} 
+  一对多匹配，将grep结果分别记录在 vendor1_model1_model2_..._bin文件名.log
+4. {
+    'vendor1':['model1', 'model2', ...],
+    'vendor2':['model1', 'model2', ...],
+    ...
+} 多厂商均命中，操作待定。
+
