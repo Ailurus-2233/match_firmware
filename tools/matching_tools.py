@@ -15,7 +15,7 @@ def find_models_info_by_firmware(folder_name, engine):
     may_models_info = {}
 
     vendors = database_tools.select_vendors(engine)
-    may_vendors = get_exist_vendors(folder_name, vendors)
+    may_vendors = find_exist_vendors(folder_name, vendors)
 
     # 匹配公司为空，标注 no_match
     if len(may_vendors) == 0:
@@ -78,7 +78,7 @@ def is_exist_model(folder_name, model_name):
 
 
 # 返回解包文件夹中，出现过的公司列表
-def get_exist_vendors(folder_name, vendors):
+def find_exist_vendors(folder_name, vendors):
     ans = []
     print('Searching vendors')
     for vendor in tqdm(vendors):
@@ -91,7 +91,7 @@ def get_exist_vendors(folder_name, vendors):
 
 
 # 返回解包文件中，出现过该公司的设备列表
-def get_exist_models_by_vendor(folder_name, models, vendor):
+def find_exist_models_by_vendor(folder_name, models, vendor):
     ans = []
     for model in models:
         if model is None:
@@ -107,7 +107,7 @@ def find_all_models(folder_name, may_vendors, engine):
     ans = {}
     for vendor in tqdm(may_vendors):
         models = database_tools.select_models_by_vendor(engine, vendor)
-        may_info = get_exist_models_by_vendor(folder_name, models, vendor)
+        may_info = find_exist_models_by_vendor(folder_name, models, vendor)
         if len(may_info[vendor]) > 0:
             ans[vendor] = may_info[vendor]
     return ans
