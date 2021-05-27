@@ -1,5 +1,6 @@
 import hashlib
 import os
+from pathlib import Path
 
 
 # 获取文件的md5
@@ -17,7 +18,10 @@ def get_file_md5(file):
 # 使用binwalk将.bin文件解包到temp中
 def unpack_firmware(path):
     print("unpacking firmware file: {}".format(path.split("/")[-1]))
-    cmd = "mkdir temp; cd temp; binwalk -eq '{}'".format(path)
+    temp_folder = Path('temp')
+    if not temp_folder.exists():
+        os.mkdir(temp_folder)
+    cmd = "cd temp; binwalk -eq '{}'".format(path)
     os.system(cmd)
     dir = os.listdir("temp")
     print("The files are saved in Temp folder")

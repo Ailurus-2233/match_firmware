@@ -6,12 +6,13 @@ from tools import database_tools
 
 # 比对固件信息，获取该固件所述的设备信息
 # 返回为一个字典类型
-def find_models_info_by_firmware(folder_name, engine):
+def find_models_info_by_firmware(folder_name, engine, file_name):
     no_match_flag = False
     no_model_flag = False
     vendors_flag = False
     models_flag = False
     file_name_flag = False
+    simple_flag = True
     may_models_info = {}
 
     vendors = database_tools.select_vendors(engine)
@@ -20,24 +21,28 @@ def find_models_info_by_firmware(folder_name, engine):
     # 匹配公司为空，标注 no_match
     if len(may_vendors) == 0:
         no_match_flag = True
+        simple_flag = False
 
     # 至少有一个匹配公司
     if len(may_vendors) > 0:
         # 遍历比对型号信息
         may_models_info = find_all_models(folder_name, may_vendors, engine)
 
-    # 结果为空，标注 no_match 将may_venders记录为结果
+    # 结果为空，标注 no_model 将may_venders记录为结果
     if len(may_models_info.keys()) == 0:
         no_model_flag = True
+        simple_flag = False
         may_models_info['may_venders'] = may_vendors
     # 结果公司数量多于1，标注 公司数量过多 将may_venders记录为结果
     elif len(may_models_info.keys()) > 1:
         vendors_flag = True
+        simple_flag = False
         may_models_info['may_venders'] = may_vendors
     else:
         # 公司数量为1，型号数量多于1，标注 型号数量过多，进行额外匹配
         if len(may_models_info[list(may_models_info.keys())[0]]) > 1:
             models_flag = True
+            simple_flag = False
             # 进行额外匹配
             vendor = list(may_models_info.keys())[0]
             models = may_models_info[vendor]
@@ -45,7 +50,13 @@ def find_models_info_by_firmware(folder_name, engine):
             # 匹配成功，记录匹配信息
             if file_name_flag:
                 may_models_info[vendor] = [may_info]
-    return may_models_info, {'no_match_flag': no_match_flag, 'no_model_flag': no_model_flag, 'vendors_flag': vendors_flag, 'models_flag': models_flag, 'file_name_flag': file_name_flag}
+                models_flag = False
+                simple_flag = True
+    return {
+        'may_models_info': may_models_info,
+        'flags': {'simple_flag': simple_flag, 'no_match_flag': no_match_flag, 'no_model_flag': no_model_flag, 'vendors_flag': vendors_flag, 'models_flag': models_flag, 'file_name_flag': file_name_flag},
+        'file_name': file_name
+    }
 
 
 # 通过正则表达式，规避掉字段出现在单词中的情况
