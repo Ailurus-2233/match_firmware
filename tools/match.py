@@ -112,14 +112,14 @@ def find_exist_vendors(folder_name, vendors):
 
 
 # 返回解包文件中，出现过该公司的设备列表
-def find_exist_models_by_vendor(folder_name, models, vendor):
+def find_exist_models_by_vendor(folder_name, models):
     ans = []
     for model in models:
         if model is None:
             continue
         if is_exist_model(folder_name, model):
             ans.append(model)
-    return {vendor: ans}
+    return ans
 
 
 # 遍历查找所有的型号
@@ -129,16 +129,19 @@ def find_all_models(folder_name, may_vendors, engine):
     for vendor in tqdm(may_vendors):
         models = database.select_models_by_vendor(engine, vendor)
         may_info = find_exist_models_by_vendor(folder_name, models, vendor)
-        if len(may_info[vendor]) > 0:
-            ans[vendor] = may_info[vendor]
+        if len(may_info) > 0:
+            ans[vendor] = may_info
     return ans
 
 
 # 多型号的情况下，需要进行额外的匹配，这里先只是匹配名称
 def extra_models_match(folder_name, models):
+    ans = []
     for model in models:
         if model in folder_name:
-            return True, model
+            ans.append(model)
+    if len(ans) == 1:
+        return True, ans[0]
     else:
         return False
 
