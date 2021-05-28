@@ -1,7 +1,7 @@
 import os
 import re
 from tqdm import tqdm
-from tools import database_tools
+from tools import database
 
 
 # 比对固件信息，获取该固件所述的设备信息
@@ -15,7 +15,7 @@ def find_models_info_by_firmware(folder_name, engine, file_name):
     simple_flag = False     # 单公司，单型号匹配标识
     may_models_info = {}
 
-    vendors = database_tools.select_vendors(engine)
+    vendors = database.select_vendors(engine)
     may_vendors = find_exist_vendors(folder_name, vendors)
 
     # 匹配公司为空，标注 no_match
@@ -127,7 +127,7 @@ def find_all_models(folder_name, may_vendors, engine):
     print('Searching models')
     ans = {}
     for vendor in tqdm(may_vendors):
-        models = database_tools.select_models_by_vendor(engine, vendor)
+        models = database.select_models_by_vendor(engine, vendor)
         may_info = find_exist_models_by_vendor(folder_name, models, vendor)
         if len(may_info[vendor]) > 0:
             ans[vendor] = may_info[vendor]
