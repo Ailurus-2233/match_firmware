@@ -7,12 +7,12 @@ from tools import database_tools
 # 比对固件信息，获取该固件所述的设备信息
 # 返回为一个字典类型
 def find_models_info_by_firmware(folder_name, engine, file_name):
-    no_match_flag = False
-    no_model_flag = False
-    vendors_flag = False
-    models_flag = False
-    file_name_flag = False
-    simple_flag = True
+    no_match_flag = False   # 无匹配标识
+    no_model_flag = False   # 单公司，无型号匹配标识
+    vendors_flag = False    # 多公司匹配标识
+    models_flag = False     # 单公司，多型号匹配标志
+    file_name_flag = False  # 使用名称匹配标识
+    simple_flag = False     # 单公司，单型号匹配标识
     may_models_info = {}
 
     vendors = database_tools.select_vendors(engine)
@@ -21,37 +21,47 @@ def find_models_info_by_firmware(folder_name, engine, file_name):
     # 匹配公司为空，标注 no_match
     if len(may_vendors) == 0:
         no_match_flag = True
-        simple_flag = False
-
-    # 至少有一个匹配公司
-    if len(may_vendors) > 0:
-        # 遍历比对型号信息
-        may_models_info = find_all_models(folder_name, may_vendors, engine)
-
-    # 结果为空，标注 no_model 将may_venders记录为结果
-    if len(may_models_info.keys()) == 0:
-        no_model_flag = True
-        simple_flag = False
-        may_models_info['may_venders'] = may_vendors
-    # 结果公司数量多于1，标注 公司数量过多 将may_venders记录为结果
-    elif len(may_models_info.keys()) > 1:
-        vendors_flag = True
-        simple_flag = False
-        may_models_info['may_venders'] = may_vendors
     else:
-        # 公司数量为1，型号数量多于1，标注 型号数量过多，进行额外匹配
-        if len(may_models_info[list(may_models_info.keys())[0]]) > 1:
-            models_flag = True
-            simple_flag = False
-            # 进行额外匹配
-            vendor = list(may_models_info.keys())[0]
-            models = may_models_info[vendor]
-            file_name_flag, may_info = extra_models_match(folder_name, models)
-            # 匹配成功，记录匹配信息
-            if file_name_flag:
-                may_models_info[vendor] = [may_info]
-                models_flag = False
+        # 遍历比对型号信息
+        may_info = find_all_models(folder_name, may_vendors, engine)
+
+        # 结果为空，标注 no_model 将may_venders记录为结果
+        if len(may_info.keys()) == 0:
+            vendors_flag = True
+            may_models_info['may_venders'] = may_vendors
+        # 结果公司数量等于1，进行进一步判断
+        elif len(may_info.keys()) == 1:
+            if len(may_info[list(may_info.keys())[0]]) == 1:
+                # 型号数量也等于1， 标记为唯一匹配，将may_info返回
                 simple_flag = True
+                may_models_info = may_info
+            elif len(may_info[list(may_info.keys())[0]]) == 0:
+                no_model_flag = True
+                may_models_info['may_vendor'] = list(may_info.keys())[0]
+            else:
+                # 型号数量多于1，进行额外查找
+                vendor = list(may_models_info.keys())[0]
+                models = may_info[vendor]
+                file_name_flag, model_name = extra_models_match(folder_name, models)
+                if file_name_flag:
+                    # 查找成功，标记为使用额外查找，唯一匹配，将查找结果返回
+                    may_models_info[vendor] = [model_name]
+                    simple_flag = True
+                else:
+                    # 查找失败，标记为多型号，将may_info返回
+                    models_flag = True
+                    may_models_info = may_info
+        else:
+            # 公司数量多于1
+            # TODO 等待其他逻辑设计
+            # 暂时先使用名称匹配
+            file_name_flag, result = more_vendor_extra_models_match(may_info, folder_name)
+            if file_name_flag:
+                may_models_info = result
+                simple_flag = True
+            else:
+                may_models_info['may_venders'] = may_vendors
+                vendors_flag = True
     return {
         'may_models_info': may_models_info,
         'flags': {'simple_flag': simple_flag, 'no_match_flag': no_match_flag, 'no_model_flag': no_model_flag, 'vendors_flag': vendors_flag, 'models_flag': models_flag, 'file_name_flag': file_name_flag},
@@ -129,5 +139,19 @@ def extra_models_match(folder_name, models):
     for model in models:
         if model in folder_name:
             return True, model
+    else:
+        return False
+
+
+# 多公司的额外匹配 基于extra_models_match()
+def more_vendor_extra_models_match(may_info, folder_name):
+    ans = {}
+    for vendor in may_info.keys():
+        models = may_info[vendor]
+        flag, model_name = extra_models_match(folder_name, models)
+        if flag:
+            ans[vendor] = [model_name]
+    if len(ans.keys()) == 1:
+        return True, ans
     else:
         return False
