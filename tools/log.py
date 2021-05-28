@@ -50,6 +50,7 @@ def log_one_vendor_one_model(may_models_info, log_folder, files_folder, file_nam
     os.system(cmd)
     cmd = 'cd temp;grep -raIinHse {} {} >> ../{}'.format(model, files_folder, log_file)
     os.system(cmd)
+    print("log file is saved in {}".format(log_file))
 
 
 # 一个公司，多个型号 的结果记录
@@ -69,6 +70,7 @@ def log_one_vendor_more_model(may_models_info, log_folder, files_folder, file_na
         os.system(cmd)
         cmd = 'cd temp;grep -raIinHse {} {} >> ../{}'.format(model, files_folder, log_file)
         os.system(cmd)
+    print("log file is saved in {}".format(log_file))
 
 
 # 一个公司，无匹配型号 的结果记录
@@ -82,12 +84,13 @@ def log_one_vendor_no_model(may_models_info, log_folder, files_folder, file_name
     os.system(cmd)
     cmd = 'cd temp;grep -rInaHse {} {} >> ../{}'.format(vendor, files_folder, log_file)
     os.system(cmd)
+    print("log file is saved in {}".format(log_file))
 
 
 # 多个公司 的结果记录
 def log_more_vendor(may_models_info, log_folder, files_folder, file_name):
     vendors = may_models_info['may_vendor']
-    log_file = log_folder / "noModel_{}_{}.log".format("_".join(vendors), file_name)
+    log_file = log_folder / "no_model_{}_{}.log".format("_".join(vendors), file_name)
     s = 'This firmware is extracted from vendor: {}'.format(",".join(vendors))
     cmd = 'echo "{}" > {}'.format(s, log_file)
     os.system(cmd)
@@ -96,9 +99,11 @@ def log_more_vendor(may_models_info, log_folder, files_folder, file_name):
         os.system(cmd)
         cmd = 'cd temp;grep -raIinHse {} {} >> ../{}'.format(vendor, files_folder, log_file)
         os.system(cmd)
+    print("log file is saved in {}".format(log_file))
 
 
 # 无匹配 的结果记录
 def log_no_match(file_name):
     cmd = 'echo "{}" >> log/no_match.log'.format(file_name)
     os.system(cmd)
+    print("log file is saved in log/no_match.log")

@@ -40,7 +40,7 @@ def find_models_info_by_firmware(folder_name, engine, file_name):
                 may_models_info['may_vendor'] = list(may_info.keys())[0]
             else:
                 # 型号数量多于1，进行额外查找
-                vendor = list(may_models_info.keys())[0]
+                vendor = list(may_info.keys())[0]
                 models = may_info[vendor]
                 file_name_flag, model_name = extra_models_match(folder_name, models)
                 if file_name_flag:
