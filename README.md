@@ -53,10 +53,10 @@
 
 比对型号信息，将型号查询操作的结果依次比对，可能出现的结果:
 
-1. {} 无匹配，grep结果记录在，noModel_厂商_bin文件名.log 文件名的 厂商之间用-分割，厂商为型号查询操作的输入
+1. {} 无匹配，grep结果记录在，noModel_厂商_bin文件名.log 文件名的，厂商为型号查询操作的输入
 2. {'vendor1':['model1']} 一对一匹配，将grep结果记录在 vendor1_model1_bin文件名.log
 3. {'vendor1':['model1', 'model2', ...]} 
-  一对多匹配，将grep结果分别记录在 vendor1_model1_model2_..._bin文件名.log
+  一对多匹配，将grep结果记录在 vendor1_model1_model2_..._bin文件名.log
 4. {
     'vendor1':['model1', 'model2', ...],
     'vendor2':['model1', 'model2', ...],
