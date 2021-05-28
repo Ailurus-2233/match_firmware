@@ -12,6 +12,7 @@ def init_log_folder(log_folder):
 # 将结果写入log
 def make_a_log(log_folder, result, files_folder):
     log_folder = Path(log_folder)
+    init_log_folder(log_folder)
     may_models_info = result['may_models_info']
     file_name = result['file_name']
     flags = result['flags']
