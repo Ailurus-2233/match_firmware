@@ -39,7 +39,7 @@ def select_models_by_vendor(engine, vendor):
     return models
 
 
-# 新增固件MD5，没有返回值
+# 新增固件MD5，没有返回值 （新增table firmwares ）
 def insert_firmware_md5(engine, firmware_name,firmware_md5,firmware_version):
     try :
         # 去除字符串两侧空格
@@ -64,11 +64,11 @@ def insert_firmware_md5(engine, firmware_name,firmware_md5,firmware_version):
                 print("md5 has exist")
     except :
         print('wrong---',insert_firmware)
-        # 记入db log
+        # 需要的话记入db操作的 log
         #traceback.print_exc()
 
 
-# 新增匹配设备，没有返回值
+# 新增匹配设备，没有返回值 （新增table devices ）
 def insert_device(engine, vendor,device):    
     try :
         vendor = vendor.strip()
@@ -88,12 +88,12 @@ def insert_device(engine, vendor,device):
                 print("device has exist")
     except :
             print('wrong---',vendor,',   ',device)
-            # 记入db log
+            # 需要的话记入db操作的 log
             #traceback.print_exc()
 
 
-# 新增匹配的固件和设备，没有返回值
-def insert_firmware_device(engine,firmware_id,device_id,is_name_match):    
+# 新增匹配的固件和设备关系记录，没有返回值 （新增table firmware_device ）
+def insert_firmware_device_rel(engine,firmware_id,device_id,is_name_match):    
     try :   
         if firmware_id is None or firmware_id < 1 : # firmware_id应大于1
             print("firmware_id should be bigger than one")
@@ -112,5 +112,43 @@ def insert_firmware_device(engine,firmware_id,device_id,is_name_match):
                 print("firmware_id & device_id  has exist   ",firmware_id,',   ',device_id)
     except :
             print('wrong---',firmware_id,',   ',device_id)
-            # 记入db log
+            # 需要的话记入db操作的 log
+            #traceback.print_exc()
+
+
+# 新增厂商和型号均匹配的设备信息，同时新增固件和设备关系记录，没有返回值 （新增table devices、firmware_device ）
+def insert_firmware_device_two(engine,firmware_md5, vendor,device,is_name_match):    
+    try :   
+        firmware_md5 = firmware_md5.strip()
+        vendor = vendor.strip()
+        device = device.strip() 
+        if len(firmware_md5) < 1 :# firmware_md5不能为空字符串
+            print("firmware_md5 could not be null")
+        elif len(vendor) < 1 : # vendor不能为空字符串
+            print("vendor could not be null")
+        elif len(device) < 1 :# device不能为空字符串
+            print("device could not be null")
+        else :
+            if is_name_match is None or is_name_match !=1 :
+                is_name_match = 0
+            # 查询firmware_md5 对应ID
+            select_firm_id = "select id from firmwares where firmware_md5='{}'".format(firmware_md5)
+            exist_firm_id = run_sql(select_firm_id, engine)
+            if len(exist_firm_id.values) == 0 : # firmware_md5不存在
+                print("firmware_md5 does not exist   ",firmware_md5)
+            else :
+                firmware_id = exist_firm_id.values[0][0]
+                insert_device(engine, vendor,device) #插入匹配设备的厂商和型号
+                # 提取厂商型号对应的ID
+                select_device = "select id from devices where vendor='{}' and device='{}'".format(vendor,device)
+                exist_device = run_sql(select_device, engine)
+                if len(exist_device.values) == 0 : # device info 不存在
+                    print("running error, can't find matching device info   vendor=",vendor,',device=',device)
+                else :
+                    device_id = exist_device.values[0][0]      #获取设备厂商型号对应id                
+                    #插入固件、设备关系表
+                    insert_firmware_device_rel(engine,firmware_id,device_id,is_name_match)                    
+    except :
+            print('wrong---firmware_md5=',firmware_md5,',   vendor=',vendor,',   device=',device)
+            # 需要的话记入db操作的 log
             #traceback.print_exc()
