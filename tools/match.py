@@ -1,7 +1,19 @@
 import os
 import re
 from tqdm import tqdm
-from tools import database
+from tools import database, file, log
+
+
+# 执行一次查询操作
+def match_file(path, engine):
+    # md5 = file.get_file_md5(path)
+    folder = file.unpack_firmware(path)
+    result = find_models_info_by_firmware(folder, engine, path.split("/")[-1])
+    print('Search result: {}'.format(result['may_models_info']))
+    print('result flags: {}'.format(result['flags']))
+    log.make_a_log('log', result, folder)
+    file.remove_file()
+    # TODO 将查询结果保存到数据库
 
 
 # 比对固件信息，获取该固件所述的设备信息
@@ -60,7 +72,7 @@ def find_models_info_by_firmware(folder_name, engine, file_name):
                 may_models_info = result
                 simple_flag = True
             else:
-                may_models_info['may_venders'] = may_vendors
+                may_models_info['may_vendors'] = may_vendors
                 vendors_flag = True
     return {
         'may_models_info': may_models_info,
@@ -70,31 +82,35 @@ def find_models_info_by_firmware(folder_name, engine, file_name):
 
 
 # 通过正则表达式，规避掉字段出现在单词中的情况
-def is_in_word(req, vendor):
+def is_in_word(req, info):
     count = 0
-    pattern = re.compile(r'[^a-zA-Z]{}[^a-zA-Z]'.format(vendor))
+    s = "([^a-zA-Z]({}|{}|{}|{})[^a-zA-Z])".format(info, info.upper(), info.lower(), info.capitalize())
+    # try:
+    pattern = re.compile(s.encode())
+    # except:
+    #     print(s)
+    #     os._exit()
     for line in req.readlines():
-        if pattern.search(line) is not None:
-            count += 1
+        temp = pattern.findall(line)
+        if len(temp) != 0:
+            for t in temp:
+                try:
+                    t = t[0].decode()
+                except UnicodeDecodeError:
+                    continue
+                if not t[0].isalpha() and not t[-1].isalpha():
+                    count += 1
     return count == 0
 
 
-# 判断该固件是否属于该公司
-def is_exist_vendor(folder_name, vendor_name):
+# 判断该固件是否属于存在此信息
+def is_exist_info(folder_name, info_name):
     # 执行grep查询，如果固件中有该公司的字段，则进行设备型号比对
-    cmd = "cd temp;grep -rInHse '{}' {}".format(vendor_name, folder_name)
-    req = os.popen(cmd, "r")
-    ans = not is_in_word(req, vendor_name)
-    req.close()
-    return ans
-
-
-# 判断该固件是否属于该设备
-def is_exist_model(folder_name, model_name):
-    cmd = "cd temp;grep -rIinHse '{}' {}".format(model_name, folder_name)
-    req = os.popen(cmd, "r")
-    ans = len(req.readlines()) >= 1
-    req.close()
+    cmd = "cd temp;grep -Hrain '{}' {} > temp.txt".format(info_name, folder_name)
+    os.system(cmd)
+    with open("temp/temp.txt", 'rb') as f:
+        ans = not is_in_word(f, info_name)
+    os.remove("temp/temp.txt")
     return ans
 
 
@@ -105,7 +121,9 @@ def find_exist_vendors(folder_name, vendors):
     for vendor in tqdm(vendors):
         if vendor is None:
             continue
-        if is_exist_vendor(folder_name, vendor):
+        vendor = vendor.replace('\"', '')
+        vendor = vendor.replace('\'', '')
+        if is_exist_info(folder_name, vendor):
             ans.append(vendor)
     print('may vendors: {}'.format(ans))
     return ans
@@ -117,7 +135,13 @@ def find_exist_models_by_vendor(folder_name, models):
     for model in models:
         if model is None:
             continue
-        if is_exist_model(folder_name, model):
+        model = model.replace('\"', '')
+        model = model.replace('\'', '')
+        model = model.replace(' ', '')
+        model = model.split('(')[0]
+        model = model.split(')')[0]
+        model = model.replace('*', '')
+        if is_exist_info(folder_name, model):
             ans.append(model)
     return ans
 
@@ -128,7 +152,7 @@ def find_all_models(folder_name, may_vendors, engine):
     ans = {}
     for vendor in tqdm(may_vendors):
         models = database.select_models_by_vendor(engine, vendor)
-        may_info = find_exist_models_by_vendor(folder_name, models, vendor)
+        may_info = find_exist_models_by_vendor(folder_name, models)
         if len(may_info) > 0:
             ans[vendor] = may_info
     return ans
@@ -143,7 +167,7 @@ def extra_models_match(folder_name, models):
     if len(ans) == 1:
         return True, ans[0]
     else:
-        return False
+        return False, None
 
 
 # 多公司的额外匹配 基于extra_models_match()
@@ -157,4 +181,4 @@ def more_vendor_extra_models_match(may_info, folder_name):
     if len(ans.keys()) == 1:
         return True, ans
     else:
-        return False
+        return False, None
