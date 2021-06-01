@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from tools import match
+from tools import match, vendor_match
 
 
 # 创建log目录
@@ -114,8 +114,7 @@ def log_info(infos, log_file, files_folder, flag):
         write_file(s, log_file, "a")
         cmd = "cd temp;grep -Hrain {} {} >> temp.txt".format(info, files_folder)
         os.system(cmd)
-        with open("temp/temp.txt", 'rb') as f:
-            re_info = get_re_result(f, info)
+        re_info = vendor_match.find_availabe_lines(info)
         os.remove("temp/temp.txt")
         for line in re_info:
             write_file(line.decode('utf8'), log_file, "a")

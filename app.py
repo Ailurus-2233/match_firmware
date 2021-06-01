@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-from tools import database, match
+from tools import database, vendor_match
 import sys
 import os
 
@@ -17,7 +17,7 @@ index = 0
 for f in files:
     if f.find('.bin') != -1:
         index += 1
-        if index != 0:
+        if index != 1:
             continue
         position = path+f
-        match.match_file(position, engine)
+        vendor_match.match_file(position, engine)
