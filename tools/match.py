@@ -9,16 +9,6 @@ def match_file(path, engine):
     # md5 = file.get_file_md5(path)
     folder = file.unpack_firmware(path)
     result = find_models_info_by_firmware(folder, engine, path.split("/")[-1])
-    # result = {
-    #     'may_models_info': {'may_vendors': ['fast', 'cisco', 'broadcom', 'hp', 'samsung', 'google', 'linksys', 'nec', 'dell', 'f5', 'dnsmasq',
-    #                                         'trend', 'canon', 'gateway', 'h3c', 'sharp', 'apple', '3com', 'xerox', 'zebra', 'zoom', 'intel', 'adb',
-    #                                         'abus', 'fujitsu', 'delta', '360', 'next', 'pci', 'st', 'dlink', 'aver', 'alpha', 'ge', 'marshall', 'lg',
-    #                                         'ibm', 'adj', 'dcn', 'rsa', 'symbol', 'atmel', 'launch', 'capture', 'infinity', 'generic', 'pronet', 'ipx',
-    #                                         'htc', 'att', 'tot', 'startech', 'dark', 'jxj', 'hot', 'dec', 'microsoft', 'tsc', 'hdl', 'company', 'mi',
-    #                                         'eip', '2n', 'amd', 'unis', 'bcm', 'cayman', 'vista']},
-    #     'flags': {'simple_flag': False, 'no_match_flag': False, 'no_model_flag': False, 'vendors_flag': True, 'models_flag': False, 'file_name_flag': False},
-    #     'file_name': 'FW_E1000_2.1.03.005_US_20140321.bin'
-    # }
     print('Search result: {}'.format(result['may_models_info']))
     print('result flags: {}'.format(result['flags']))
     log.make_a_log('log', result, folder)
@@ -108,11 +98,28 @@ def re_match(line, info):
     return False
 
 
-def is_skip_files(info):
-    skip_files = ["jquery.js"]
-    if info.split(":")[0].split("/")[-1] in skip_files:
-        return True
+def is_skip_keywords(line):
+    skip_keywords = [
+        "jquery.js",
+        "Microsoft FrontPage", "Microsoft Word", "Microsoft Internet Explorer", "MSN Messenger",
+        "urn:schemas",
+        "help"
+    ]
+    for sk in skip_keywords:
+        if sk in line:
+            return True
     return False
+
+
+def is_function_name(line, info):
+    # 匹配形如info(**)的字段 info(.*)
+    s = "({}|{}|{}|{})[(].+[)]".format(info, info.upper(), info.lower(), info.capitalize())
+    pattern = re.compile(s.encode())
+    temp = pattern.findall(line)
+    if len(temp) == 0:
+        return False
+    else:
+        return True
 
 
 def is_decodable(info):
@@ -126,24 +133,37 @@ def is_decodable(info):
 def is_available_line(line, info):
     if not is_decodable(line):
         return False
-    if is_skip_files(line.decode('utf8')):
+    if is_skip_keywords(line.decode('utf8')):
+        return False
+    if is_function_name(line, info):
         return False
     if re_match(line, info):
         return True
     return False
 
 
-# 判断该固件是否属于存在此信息
-def is_exist_info(folder_name, info_name):
-    # 执行grep查询，如果固件中有该公司的字段，则进行设备型号比对
-    cmd = "cd temp;grep -Hrain '{}' {} > temp.txt".format(info_name, folder_name)
-    os.system(cmd)
-    ans = False
+def find_availabe_lines(info):
+    ans = []
     with open("temp/temp.txt", 'rb') as f:
         for line in f.readlines():
-            ans = is_available_line(line, info_name)
-            if ans:
-                break
+            if is_available_line(line, info):
+                ans.append(line)
+    return ans
+
+
+# 判断该固件是否属于存在此信息
+def is_exist_info(folder_name, info, info_type):
+    # 执行grep查询，如果固件中有该公司的字段，则进行设备型号比对
+    cmd = "cd temp;grep -Hrain '{}' {} > temp.txt".format(info, folder_name)
+    os.system(cmd)
+    ans = False
+    available_lines = find_availabe_lines(info)
+    if info_type == "vendor":
+        if len(available_lines) > 5:
+            ans = True
+    else:
+        if len(available_lines) != 0:
+            ans = True
     os.remove("temp/temp.txt")
     return ans
 

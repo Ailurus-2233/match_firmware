@@ -16,8 +16,9 @@ vendors = database.select_vendors(engine)
 index = 0
 for f in files:
     if f.find('.bin') != -1:
-        index += 1
-        if index != 0:
-            continue
         position = path+f
-        match.match_file(position, engine)
+        try:
+            match.match_file(position, engine)
+        except IndexError:
+            print(f+" cannot unpack")
+            continue

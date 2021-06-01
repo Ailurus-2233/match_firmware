@@ -108,14 +108,21 @@ def write_file_bytes(s, file_name, m):
         f.write(s)
 
 
-def log_info(infos, log_file, files_folder, flag):
+def log_info(infos, log_file, files_folder, info_type):
     for info in infos:
-        s = "--------------{} info ({})--------------\n".format(flag, info)
+        s = "--------------{} info ({})--------------\n".format(info_type, info)
         write_file(s, log_file, "a")
         cmd = "cd temp;grep -Hrain {} {} >> temp.txt".format(info, files_folder)
         os.system(cmd)
         with open("temp/temp.txt", 'rb') as f:
-            re_info = get_re_result(f, info)
+            re_info = match.find_availabe_lines(f, info)
         os.remove("temp/temp.txt")
-        for line in re_info:
-            write_file(line.decode('utf8'), log_file, "a")
+        if info_type == "vendor":
+            if len(re_info) > 5:
+                flag = True
+        else:
+            if len(re_info) != 0:
+                flag = True
+        if flag:
+            for line in re_info:
+                write_file(line.decode('utf8'), log_file, "a")
