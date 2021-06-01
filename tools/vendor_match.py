@@ -154,14 +154,18 @@ def find_availabe_lines(info):
 
 
 # 判断该固件是否属于存在此信息
-def is_exist_info(folder_name, info):
+def is_exist_info(folder_name, info, info_type):
     # 执行grep查询，如果固件中有该公司的字段，则进行设备型号比对
     cmd = "cd temp;grep -Hrain '{}' {} > temp.txt".format(info, folder_name)
     os.system(cmd)
     ans = False
     available_lines = find_availabe_lines(info)
-    if len(available_lines) > 5:
-        ans = True
+    if info_type == "vendor":
+        if len(available_lines) > 5:
+            ans = True
+    else:
+        if len(available_lines) != 0:
+            ans = True
     os.remove("temp/temp.txt")
     return ans
 
@@ -175,7 +179,7 @@ def find_exist_vendors(folder_name, vendors):
             continue
         vendor = vendor.replace('\"', '')
         vendor = vendor.replace('\'', '')
-        if is_exist_info(folder_name, vendor):
+        if is_exist_info(folder_name, vendor, "vendor"):
             ans.append(vendor)
     print('may vendors: {}'.format(ans))
     return ans
@@ -193,7 +197,7 @@ def find_exist_models_by_vendor(folder_name, models):
         model = model.split('(')[0]
         model = model.split(')')[0]
         model = model.replace('*', '')
-        if is_exist_info(folder_name, model):
+        if is_exist_info(folder_name, model, "model"):
             ans.append(model)
     return ans
 

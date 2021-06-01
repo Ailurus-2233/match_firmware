@@ -16,8 +16,8 @@ vendors = database.select_vendors(engine)
 index = 0
 for f in files:
     if f.find('.bin') != -1:
-        index += 1
-        if index != 1:
-            continue
+        # index += 1
+        # if index != 1:
+        #     continue
         position = path+f
         vendor_match.match_file(position, engine)
