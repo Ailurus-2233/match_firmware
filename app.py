@@ -14,6 +14,7 @@ engine = database.create_mysql_engine(setting['user'], setting['password'], sett
 vendors = database.select_vendors(engine)
 
 index = 0
+
 for f in files:
     if f.find('.bin') != -1:
         # index += 1
