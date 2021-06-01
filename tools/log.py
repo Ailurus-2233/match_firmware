@@ -1,6 +1,6 @@
 import os
-import re
 from pathlib import Path
+from tools import match
 
 
 # 创建log目录
@@ -42,7 +42,7 @@ def log_one_vendor_one_model(may_models_info, log_folder, files_folder, file_nam
     s = "This firmware is extracted from vendor: {}, device:{}".format(vendor[0], model[0])
     if flags["file_name_flag"]:
         s += "(File name is one of the conditions)"
-    write_file(s+"\n", log_file, "w")
+    write_file(s + "\n", log_file, "w")
     log_info(vendor, log_file, files_folder, "vendor")
     log_info(model, log_file, files_folder, "model")
     print("log file is saved in {}".format(log_file))
@@ -82,28 +82,15 @@ def log_more_vendor(may_models_info, log_folder, files_folder, file_name):
 
 # 无匹配 的结果记录
 def log_no_match(file_name):
-    write_file(file_name+"\n", "log/noMatch.log", "a")
+    write_file(file_name + "\n", "log/noMatch.log", "a")
     print("log file is saved in log/no_match.log")
 
 
-# 信息添加正则表达式匹配
-def re_match(log, info):
+def get_re_result(log, info):
     result = []
-    s = "([^a-zA-Z]({}|{}|{}|{})[^a-zA-Z])".format(info, info.upper(), info.lower(), info.capitalize())
-    pattern = re.compile(s.encode())
     for line in log.readlines():
-        temp = pattern.findall(line)
-        if len(temp) != 0:
-            flag = True
-            for t in temp:
-                try:
-                    t = t[0].decode()
-                except UnicodeDecodeError:
-                    continue
-                if not t[0].isalpha() and not t[-1].isalpha():
-                    if flag:
-                        result.append(line)
-                        flag = False
+        if match.is_available_line(line, info):
+            result.append(line)
     return result
 
 
@@ -115,8 +102,8 @@ def write_file(s, file_name, m):
 
 # 以字节的方式写入文件
 def write_file_bytes(s, file_name, m):
-    with open(file_name, m+"b") as f:
-        if type(s) is str:
+    with open(file_name, m + "b") as f:
+        if isinstance(s, str):
             s = s.encode()
         f.write(s)
 
@@ -128,7 +115,7 @@ def log_info(infos, log_file, files_folder, flag):
         cmd = "cd temp;grep -Hrain {} {} >> temp.txt".format(info, files_folder)
         os.system(cmd)
         with open("temp/temp.txt", 'rb') as f:
-            re_info = re_match(f, info)
+            re_info = get_re_result(f, info)
         os.remove("temp/temp.txt")
         for line in re_info:
-            write_file_bytes(line, log_file, "a")
+            write_file(line.decode('utf8'), log_file, "a")
