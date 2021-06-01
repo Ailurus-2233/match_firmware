@@ -6,14 +6,21 @@ from tools import database, file, log
 
 # 执行一次查询操作
 def match_file(path, engine):
-    # md5 = file.get_file_md5(path)
+    md5 = file.get_file_md5(path)
     folder = file.unpack_firmware(path)
     result = find_models_info_by_firmware(folder, engine, path.split("/")[-1])
-    print('Search result: {}'.format(result['may_models_info']))
-    print('result flags: {}'.format(result['flags']))
+    may_models_info = result['may_models_info']
+    flags = result['flags']
+    file_name = result['file_name']
+    print('Search result: {}'.format(may_models_info))
+    print('result flags: {}'.format(flags))
     log.make_a_log('log', result, folder)
     file.remove_file()
-    # TODO 将查询结果保存到数据库
+    if result['flags']['simple_flag']:
+        database.insert_firmware_md5(engine, file_name, md5, "")
+        vendor = list(may_models_info.keys())[0]
+        model = may_models_info[vendor]
+        database.insert_firmware_device_two(engine, md5, vendor, model, flags["file_name_flag"])
 
 
 # 比对固件信息，获取该固件所述的设备信息
