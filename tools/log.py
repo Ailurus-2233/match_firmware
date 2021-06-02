@@ -112,7 +112,7 @@ def log_info(infos, log_file, files_folder, info_type):
     for info in infos:
         s = "--------------{} info ({})--------------\n".format(info_type, info)
         write_file(s, log_file, "a")
-        cmd = "cd temp;grep -Hrain {} {} >> temp.txt".format(info, files_folder)
+        cmd = "cd temp;grep -Hrain '{}' '{}' >> temp.txt".format(info, files_folder)
         os.system(cmd)
         re_info = match.find_availabe_lines(info)
         os.remove("temp/temp.txt")

@@ -161,7 +161,7 @@ def find_availabe_lines(info):
 # 判断该固件是否属于存在此信息
 def is_exist_info(folder_name, info, info_type):
     # 执行grep查询，如果固件中有该公司的字段，则进行设备型号比对
-    cmd = "cd temp;grep -Hrain '{}' {} > temp.txt".format(info, folder_name)
+    cmd = "cd temp;grep -Hrain '{}' '{}' > temp.txt".format(info, folder_name)
     os.system(cmd)
     ans = False
     available_lines = find_availabe_lines(info)
