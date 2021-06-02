@@ -114,8 +114,7 @@ def log_info(infos, log_file, files_folder, info_type):
         write_file(s, log_file, "a")
         cmd = "cd temp;grep -Hrain {} {} >> temp.txt".format(info, files_folder)
         os.system(cmd)
-        with open("temp/temp.txt", 'rb') as f:
-            re_info = match.find_availabe_lines(f, info)
+        re_info = match.find_availabe_lines(info)
         os.remove("temp/temp.txt")
         if info_type == "vendor":
             if len(re_info) > 5:

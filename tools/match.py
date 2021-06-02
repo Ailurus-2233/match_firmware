@@ -19,7 +19,7 @@ def match_file(path, engine):
     if result['flags']['simple_flag']:
         database.insert_firmware_md5(engine, file_name, md5, "")
         vendor = list(may_models_info.keys())[0]
-        model = may_models_info[vendor]
+        model = may_models_info[vendor][0]
         database.insert_firmware_device_two(engine, md5, vendor, model, flags["file_name_flag"])
 
 
@@ -47,7 +47,7 @@ def find_models_info_by_firmware(folder_name, engine, file_name):
         # 结果为空，标注 no_model 将may_venders记录为结果
         if len(may_info.keys()) == 0:
             vendors_flag = True
-            may_models_info['may_venders'] = may_vendors
+            may_models_info['may_vendors'] = may_vendors
         # 结果公司数量等于1，进行进一步判断
         elif len(may_info.keys()) == 1:
             if len(may_info[list(may_info.keys())[0]]) == 1:
@@ -184,7 +184,7 @@ def find_exist_vendors(folder_name, vendors):
             continue
         vendor = vendor.replace('\"', '')
         vendor = vendor.replace('\'', '')
-        if is_exist_info(folder_name, vendor):
+        if is_exist_info(folder_name, vendor, "vendor"):
             ans.append(vendor)
     print('may vendors: {}'.format(ans))
     return ans
@@ -202,7 +202,7 @@ def find_exist_models_by_vendor(folder_name, models):
         model = model.split('(')[0]
         model = model.split(')')[0]
         model = model.replace('*', '')
-        if is_exist_info(folder_name, model):
+        if is_exist_info(folder_name, model, "model"):
             ans.append(model)
     return ans
 
