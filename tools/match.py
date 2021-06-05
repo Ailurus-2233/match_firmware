@@ -4,6 +4,20 @@ from tqdm import tqdm
 from tools import database, file, log
 
 
+# 执行一次查询操作，不进行数据库操作
+def match_file_nodb(path, engine):
+    # md5 = file.get_file_md5(path)
+    folder = file.unpack_firmware(path)
+    result = find_models_info_by_firmware(folder, engine, path.split("/")[-1])
+    may_models_info = result['may_models_info']
+    flags = result['flags']
+    # file_name = result['file_name']
+    print('Search result: {}'.format(may_models_info))
+    print('result flags: {}'.format(flags))
+    log.make_a_log('log', result, folder)
+    file.remove_file()
+
+
 # 执行一次查询操作
 def match_file(path, engine):
     md5 = file.get_file_md5(path)
@@ -75,11 +89,13 @@ def find_models_info_by_firmware(folder_name, engine, file_name):
             # TODO 等待其他逻辑设计
             # 暂时先使用名称匹配
             file_name_flag, result = more_vendor_extra_models_match(may_info, folder_name)
+            print(result)
             if file_name_flag:
                 may_models_info = result
                 simple_flag = True
             else:
-                may_models_info['may_vendors'] = may_vendors
+                may_models_info['may_vendors'] = list(may_info.keys())
+                print(may_info)
                 vendors_flag = True
     return {
         'may_models_info': may_models_info,
@@ -166,7 +182,7 @@ def is_exist_info(folder_name, info, info_type):
     ans = False
     available_lines = find_availabe_lines(info)
     if info_type == "vendor":
-        if len(available_lines) > 5:
+        if len(available_lines) != 0:
             ans = True
     else:
         if len(available_lines) != 0:
@@ -242,4 +258,4 @@ def more_vendor_extra_models_match(may_info, folder_name):
     if len(ans.keys()) == 1:
         return True, ans
     else:
-        return False, None
+        return False, ans

@@ -94,8 +94,9 @@ def log_info(infos, log_file, files_folder, info_type):
         os.system(cmd)
         re_info = match.find_availabe_lines(info)
         os.remove("temp/temp.txt")
+        flag = False
         if info_type == "vendor":
-            if len(re_info) > 5:
+            if len(re_info) != 0:
                 flag = True
         else:
             if len(re_info) != 0:
