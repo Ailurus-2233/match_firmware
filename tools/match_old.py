@@ -89,13 +89,13 @@ def find_models_info_by_firmware(folder_name, engine, file_name):
             # TODO 等待其他逻辑设计
             # 暂时先使用名称匹配
             file_name_flag, result = more_vendor_extra_models_match(may_info, folder_name)
-            # print(result)
+            print(result)
             if file_name_flag:
                 may_models_info = result
                 simple_flag = True
             else:
                 may_models_info["may_vendors"] = list(may_info.keys())
-                # print(may_info)
+                print(may_info)
                 vendors_flag = True
     return {
         "may_models_info": may_models_info,
@@ -106,34 +106,40 @@ def find_models_info_by_firmware(folder_name, engine, file_name):
 
 # 通过正则表达式，规避掉字段出现在单词中的情况
 def re_match(line, info):
-    # 这里匹配的是前面没有字母，后面除了v可以匹配外，其他字母均不能匹配
-    s = "([^a-zA-Z]({}|{}|{}|{})[^a-uw-zA-UW-Z])".format(info, info.upper(), info.lower(), info.capitalize())
+    s = "([^a-zA-Z]({}|{}|{}|{})[^a-uw-zA-Z])".format(info, info.upper(), info.lower(), info.capitalize())
     pattern = re.compile(s.encode())
     temp = pattern.findall(line)
     if len(temp) != 0:
+        # print(temp)
+        # for t in temp:
+        #     try:
+        #         s = t[0].decode("utf-8")
+        #     except UnicodeDecodeError:
+        #         continue
+        #     if not s[0].isalpha() and not s[-1].isalpha():
         return True
     return False
 
 
 def is_skip_keywords(line):
-    # skip_files = [
-    #     "jquery.*.js",
-    #     "jQuery.*.js",
-    #     "res_it.xml",
-    #     "Web_*.json",
-    #     "live_*.js",
-    #     "OcclusionDetection_*.js",
-    #     "VideoConfig_*.js",
-    #     "OSDConfig_*.js",
-    #     "email_*.xml",
-    #     "boardagent",
-    #     "dev_*.xml",
-    #     "mmGrid_*.js",
-    #     "VideoConfig_*.js",
-    #     "FigureDetection_*.js",
-    #     "motionDetection_*.js",
-    #     "common_*.js"
-    # ]
+    skip_files = [
+        "jquery.*.js",
+        "jQuery.*.js",
+        "res_it.xml",
+        "Web_*.json",
+        "live_*.js",
+        "OcclusionDetection_*.js",
+        "VideoConfig_*.js",
+        "OSDConfig_*.js",
+        "email_*.xml",
+        "boardagent",
+        "dev_*.xml",
+        "mmGrid_*.js",
+        "VideoConfig_*.js",
+        "FigureDetection_*.js",
+        "motionDetection_*.js",
+        "common_*.js"
+    ]
     skip_keywords = [
         "Microsoft FrontPage", "Microsoft Word", "Microsoft Internet Explorer", "MSN Messenger",
         "urn:schemas",
@@ -182,12 +188,12 @@ def is_with_underline(line, info):
 def is_available_line(line, info):
     if not is_decodable(line):
         return False
-    if is_skip_keywords(line.decode("utf8")):
-        return False
-    if is_function_name(line, info):
-        return False
-    if is_with_underline(line, info):
-        return False
+    # if is_skip_keywords(line.decode("utf8")):
+    #     return False
+    # if is_function_name(line, info):
+    #     return False
+    # if is_with_underline(line, info):
+    #     return False
     if re_match(line, info):
         if len(line) < 300:
             return True
@@ -203,25 +209,18 @@ def find_availabe_lines(info):
     return ans
 
 
-# 判断该固件是否存在该厂商的信息
-def is_exist_vendor(folder_name, vendor):
-    cmd = "cd temp/{};grep -Hrain '{}' ./ > ../temp.txt".format(folder_name, vendor)
+# 判断该固件是否属于存在此信息
+def is_exist_info(folder_name, info, info_type):
+    # 执行grep查询，如果固件中有该公司的字段，则进行设备型号比对
+    cmd = "cd temp;grep -Hrain '{}' '{}' > temp.txt".format(info, folder_name)
     os.system(cmd)
     ans = False
-    ava_lines = find_availabe_lines(vendor)
-    if len(ava_lines) != 0:
-        ans = True
-    os.remove("temp/temp.txt")
-    return ans
-
-
-# 判断该固件文件是否存在该型号信息
-def is_exist_model(folder_name, model):
-    cmd = "cd temp/{};grep -Hrain '{}' ./ > ../temp.txt".format(folder_name, model)
-    os.system(cmd)
-    ans = False
-    with open("temp/temp.txt", 'rb') as f:
-        if len(f.readlines()) > 0:
+    available_lines = find_availabe_lines(info)
+    if info_type == "vendor":
+        if len(available_lines) != 0:
+            ans = True
+    else:
+        if len(available_lines) != 0:
             ans = True
     os.remove("temp/temp.txt")
     return ans
@@ -234,7 +233,9 @@ def find_exist_vendors(folder_name, vendors):
     for vendor in tqdm(vendors):
         if vendor is None:
             continue
-        if is_exist_vendor(folder_name, vendor):
+        vendor = vendor.replace("\"", "")
+        vendor = vendor.replace("\'", "")
+        if is_exist_info(folder_name, vendor, "vendor"):
             ans.append(vendor)
     print("may vendors: {}".format(ans))
     return ans
@@ -246,7 +247,13 @@ def find_exist_models_by_vendor(folder_name, models):
     for model in models:
         if model is None:
             continue
-        if is_exist_model(folder_name, model):
+        model = model.replace("\"", "")
+        model = model.replace("\'", "")
+        model = model.replace(" ", "")
+        model = model.split("(")[0]
+        model = model.split(")")[0]
+        model = model.replace("*", "")
+        if is_exist_info(folder_name, model, "model"):
             ans.append(model)
     return ans
 
@@ -273,14 +280,6 @@ def extra_models_match(file_name, models):
             ans.append(model)
     if len(ans) == 1:
         return True, ans[0]
-    elif len(ans) > 1:
-        max = 0
-        index = 0
-        for i in range(len(ans)):
-            if len(ans[i]) > max:
-                index = i
-                max = len(ans[i])
-        return True, ans[index]
     else:
         return False, None
 

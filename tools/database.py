@@ -22,7 +22,7 @@ def run_sql(sql_query, engine):
 
 # 从数据库中 获取所有的公司名称
 def select_vendors(engine):
-    vendors_temp = run_sql("select distinct vendor from list_tmp", engine)
+    vendors_temp = run_sql("select distinct vendor from list_new", engine)
     vendors = []
     for i in vendors_temp.values:
         vendors.append(i[0])
@@ -31,7 +31,7 @@ def select_vendors(engine):
 
 # 在数据库中 获取该公司的所有设备名称
 def select_models_by_vendor(engine, vendor):
-    model_temp = run_sql("select distinct productModel from list_tmp where vendor like '{}'".format(vendor), engine)
+    model_temp = run_sql("select distinct model from list_new where vendor like '{}'".format(vendor), engine)
     models = []
     for i in model_temp.values:
         models.append(i[0])

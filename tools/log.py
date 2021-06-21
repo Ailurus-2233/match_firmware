@@ -90,17 +90,17 @@ def log_info(infos, log_file, files_folder, info_type):
     for info in infos:
         s = "--------------{} info ({})--------------\n".format(info_type, info)
         file.write_file(s, log_file, "a")
-        cmd = "cd temp;grep -Hrain '{}' '{}' >> temp.txt".format(info, files_folder)
+        cmd = "cd temp/{};grep -Hrain '{}' ./ >> ../temp.txt".format(files_folder, info)
         os.system(cmd)
-        re_info = match.find_availabe_lines(info)
-        os.remove("temp/temp.txt")
-        flag = False
         if info_type == "vendor":
+            re_info = match.find_availabe_lines(info)
+            os.remove("temp/temp.txt")
             if len(re_info) != 0:
-                flag = True
+                for line in re_info:
+                    file.write_file(line.decode('utf8'), log_file, "a")
         else:
-            if len(re_info) != 0:
-                flag = True
-        if flag:
-            for line in re_info:
-                file.write_file(line.decode('utf8'), log_file, "a")
+            with open("temp/temp.txt", 'rb') as f:
+                info = f.readlines()
+                if len(info) > 0:
+                    for line in info:
+                        file.write_file_bytes(line, log_file, "a")
