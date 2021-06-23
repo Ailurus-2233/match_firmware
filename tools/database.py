@@ -68,7 +68,7 @@ def insert_firmware_md5(engine, firmware_name, firmware_md5, firmware_version):
 
 
 # 新增匹配设备，没有返回值 （新增table devices ）
-def insert_device(engine, vendor, device):
+def insert_devices(engine, vendor, device):
     try:
         vendor = vendor.strip()
         device = device.strip()
@@ -137,7 +137,7 @@ def insert_firmware_device_two(engine, firmware_md5, vendor, device, is_name_mat
                 print("firmware_md5 does not exist   ", firmware_md5)
             else:
                 firmware_id = exist_firm_id.values[0][0]
-                insert_device(engine, vendor, device)  # 插入匹配设备的厂商和型号
+                insert_devices(engine, vendor, device)  # 插入匹配设备的厂商和型号
                 # 提取厂商型号对应的ID
                 select_device = "select id from devices where vendor='{}' and device='{}'".format(vendor, device)
                 exist_device = run_sql(select_device, engine)
@@ -151,3 +151,77 @@ def insert_firmware_device_two(engine, firmware_md5, vendor, device, is_name_mat
         print('wrong---firmware_md5=', firmware_md5, ',   vendor=', vendor, ',   device=', device)
         # 需要的话记入db操作的 log
         # traceback.print_exc()
+
+
+# 判断数据库中是否有这个固件 通过md5，如果有返回True
+def is_include_firmware(engine, file_md5):
+    sql = "select * from firmwares where firmware_md5 = '{}'".format(file_md5)
+    req = run_sql(sql, engine)
+    if len(req.values) == 1:
+        return True
+    else:
+        return False
+
+
+# 判断数据库中是否有这个设备信息，通过设备名称和公司
+def is_include_device(engine, vendor, device):
+    sql = "select * from devices where vendor = '{}' and device = '{}'".format(vendor, device)
+    req = run_sql(sql, engine)
+    if len(req.values) == 1:
+        return True
+    else:
+        return False
+
+
+# 获取该固件的id 通过md5
+def get_firmware_id_by_md5(engine, file_md5):
+    sql = "select id from firmwares where firmware_md5 = '{}'".format(file_md5)
+    req = run_sql(sql, engine)
+    return req.values[0][0]
+
+
+# 获取设备的id 通过vendor，device
+def get_device_id(engine, vendor, device):
+    sql = "select * from devices where vendor = '{}' and device = '{}'".format(vendor, device)
+    req = run_sql(sql, engine)
+    return req.values[0][0]
+
+
+# 插入一条固件信息
+def insert_firmware(engine, file_name, md5, version):
+    sql = "INSERT INTO firmwares(firmware_name, firmware_md5, version) VALUES('{}', '{}', '{}')".format(file_name, md5, version)
+    engine.execute(sql)
+
+
+# 插入一条设备信息
+def insert_device(engine, vendor, device):
+    sql = "INSERT INTO devices(vendor, device) VALUES('{}', '{}')".format(vendor, device)
+    engine.execute(sql)
+
+
+# 插入一条关联信息
+def insert_relate(engine, device_id, firmware_id):
+    sql = "SELECT * FROM firmware_device WHERE firmware_id = {} AND device_id = {}".format(firmware_id, device_id)
+    req = run_sql(sql, engine)
+    if len(req.values) == 0:
+        sql = "INSERT INTO firmware_device(firmware_id, device_id, is_name_match) VALUES({}, {}, 0)".format(firmware_id, device_id)
+        engine.execute(sql)
+
+
+# 将一条有用信息插入数据库
+def insert_info(engine, data):
+    md5 = data["md5"]
+    if is_include_firmware(engine, md5):
+        fm_id = get_firmware_id_by_md5(engine, md5)
+    else:
+        insert_firmware(engine, data["name"], md5, data["version"])
+        fm_id = get_firmware_id_by_md5(engine, md5)
+    devices = data["device"]
+    vendor = data["vendor"]
+    for device in devices:
+        if is_include_device(engine, vendor, device):
+            d_id = get_device_id(engine, vendor, device)
+        else:
+            insert_device(engine, vendor, device)
+            d_id = get_device_id(engine, vendor, device)
+        insert_relate(engine, d_id, fm_id)
